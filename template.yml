@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  contact:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: contact
+      Runtime: go1.x
+      Environment:
+        Variables:
+          CONTACT_EMAIL_PASSWORD:
+          CONTACT_EMAIL_RECIPIENT:
+          CONTACT_EMAIL_SUBJECT:
+          CONTACT_EMAIL_USER:
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
