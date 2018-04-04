@@ -13,6 +13,7 @@ Resources:
           CONTACT_EMAIL_RECIPIENT:
           CONTACT_EMAIL_SUBJECT:
           CONTACT_EMAIL_USER:
+          CAPTCHA_SECRET:
       Events:
         GetEvent:
           Type: Api
