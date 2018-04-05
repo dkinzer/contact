@@ -43,25 +43,21 @@ type Captcha struct {
 func GetDefaultMailConfiguration() (MailConfiguration, error) {
 	subject := os.Getenv("CONTACT_EMAIL_SUBJECT")
 	if subject == "" {
-		log.Println("Missing subject configuration.")
 		return MailConfiguration{}, ErrorMailConfiguration
 	}
 
 	recipient := os.Getenv("CONTACT_EMAIL_RECIPIENT")
 	if recipient == "" {
-		log.Println("Missing recipient configuration.")
 		return MailConfiguration{}, ErrorMailConfiguration
 	}
 
 	user := os.Getenv("CONTACT_EMAIL_USER")
 	if user == "" {
-		log.Println("Missing user configuration.")
 		return MailConfiguration{}, ErrorMailConfiguration
 	}
 
 	password := os.Getenv("CONTACT_EMAIL_PASSWORD")
 	if password == "" {
-		log.Println("Missing password configuration.")
 		return MailConfiguration{}, ErrorMailConfiguration
 	}
 
@@ -94,6 +90,7 @@ func mail(contact Contact) error {
 	err = t.Execute(message, contact)
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -117,6 +114,7 @@ func GetContact(request events.APIGatewayProxyRequest) (Contact, error) {
 		contact Contact
 		err     error
 	)
+
 	query, err = url.ParseQuery(request.Body)
 
 	if err != nil {
@@ -126,6 +124,10 @@ func GetContact(request events.APIGatewayProxyRequest) (Contact, error) {
 	contact.Name = query.Get("name")
 	if contact.Name == "" {
 		return contact, ErrorContactInfo
+	}
+
+	if !hasValidCaptchaResponse(request) {
+		return contact, ErrorFailedCaptchaConfirmation
 	}
 
 	contact.Email = query.Get("email")
@@ -157,7 +159,7 @@ func GetCaptcha(request events.APIGatewayProxyRequest) Captcha {
 		err     error
 	)
 
-	captcha.Secret = os.Getenv("CAPCHA_SECRET")
+	captcha.Secret = os.Getenv("CAPTCHA_SECRET")
 
 	if captcha.Secret == "" {
 		return captcha
@@ -200,11 +202,12 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var (
 		contact  Contact
 		response events.APIGatewayProxyResponse
+		message  string = `{ "message": "%s" }`
 		err      error
 	)
 
 	response = events.APIGatewayProxyResponse{
-		Body:       "Message sent successfully",
+		Body:       `{ "message": "Message sent successfully" }`,
 		StatusCode: 200,
 		Headers: map[string]string{
 			"Access-Control-Allow-Origin": "*",
@@ -214,20 +217,22 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	contact, err = GetContact(request)
 
 	if err != nil {
-		response.Body = fmt.Sprint("Could not unmarshal the form query: ", err)
-		response.StatusCode = 500
-		return response, err
+		log.Println(err)
+		response.Body = fmt.Sprintf(message, err)
+		response.StatusCode = 400
+		return response, nil
 	}
 
 	err = mail(contact)
 
 	if err != nil {
-		response.Body = "Failed to send message."
+		log.Println(err)
+		response.Body = fmt.Sprintf(message, err)
 		response.StatusCode = 500
-		return response, err
+		return response, nil
 	}
 
-	return response, err
+	return response, nil
 }
 
 func main() {
