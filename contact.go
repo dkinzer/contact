@@ -126,10 +126,6 @@ func GetContact(request events.APIGatewayProxyRequest) (Contact, error) {
 		return contact, ErrorContactInfo
 	}
 
-	if !hasValidCaptchaResponse(request) {
-		return contact, ErrorFailedCaptchaConfirmation
-	}
-
 	contact.Email = query.Get("email")
 	if contact.Email == "" {
 		return contact, ErrorContactInfo
@@ -178,7 +174,7 @@ func GetCaptcha(request events.APIGatewayProxyRequest) Captcha {
 func hasValidCaptchaResponse(request events.APIGatewayProxyRequest) bool {
 	var (
 		captcha Captcha
-		valid   bool
+		valid   bool = true
 		err     error
 	)
 
@@ -189,9 +185,11 @@ func hasValidCaptchaResponse(request events.APIGatewayProxyRequest) bool {
 	}
 
 	recaptcha.Init(captcha.Secret)
+	// This will fail on multiple attempts (good thing).
 	valid, err = recaptcha.Confirm(captcha.ClientIp, captcha.Response)
 
 	if err != nil {
+		log.Println(err)
 		return false
 	}
 
