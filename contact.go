@@ -106,7 +106,8 @@ func mail(contact Contact) error {
 	mail.Password = config.Password
 
 	for i := 0; i < len(config.Recipients); i++ {
-		mail.AddRecipient(config.Recipients[i])
+		recipient := strings.TrimSpace(config.Recipients[i])
+		mail.AddRecipient(recipient)
 	}
 
 	return mail.Send()
