@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -28,10 +29,10 @@ type Contact struct {
 }
 
 type MailConfiguration struct {
-	Subject   string
-	Recipient string
-	User      string
-	Password  string
+	Subject    string
+	Recipients []string
+	User       string
+	Password   string
 }
 
 type Captcha struct {
@@ -46,8 +47,8 @@ func GetDefaultMailConfiguration() (MailConfiguration, error) {
 		return MailConfiguration{}, ErrorMailConfiguration
 	}
 
-	recipient := os.Getenv("CONTACT_EMAIL_RECIPIENT")
-	if recipient == "" {
+	recipients := os.Getenv("CONTACT_EMAIL_RECIPIENTS")
+	if recipients == "" {
 		return MailConfiguration{}, ErrorMailConfiguration
 	}
 
@@ -62,10 +63,10 @@ func GetDefaultMailConfiguration() (MailConfiguration, error) {
 	}
 
 	return MailConfiguration{
-		Subject:   subject,
-		Recipient: recipient,
-		User:      user,
-		Password:  password,
+		Subject:    subject,
+		Recipients: strings.Split(recipients, ","),
+		User:       user,
+		Password:   password,
 	}, nil
 }
 
@@ -103,7 +104,10 @@ func mail(contact Contact) error {
 	mail := gmail.Compose(subject, message.String())
 	mail.From = config.User
 	mail.Password = config.Password
-	mail.AddRecipient(config.Recipient)
+
+	for i := 0; i < len(config.Recipients); i++ {
+		mail.AddRecipient(config.Recipients[i])
+	}
 
 	return mail.Send()
 }

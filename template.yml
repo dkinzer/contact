@@ -10,7 +10,7 @@ Resources:
       Environment:
         Variables:
           CONTACT_EMAIL_PASSWORD:
-          CONTACT_EMAIL_RECIPIENT:
+          CONTACT_EMAIL_RECIPIENTS:
           CONTACT_EMAIL_SUBJECT:
           CONTACT_EMAIL_USER:
           CAPTCHA_SECRET:
